@@ -1303,6 +1303,7 @@
                   "plugins/workboard",
                   "plugins/webhooks",
                   "plugins/admin-http-rpc",
+                  "plugins/virtual-companion",
                   "plugins/voice-call",
                   "plugins/vault",
                   "plugins/onepassword",

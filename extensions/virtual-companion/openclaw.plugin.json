@@ -1,0 +1,14 @@
+{
+  "id": "virtual-companion",
+  "name": "Virtual Companion",
+  "description": "A single private companion with a customizable Soul, mood, routines, durable chat memory, and proactive care.",
+  "activation": {
+    "onStartup": true
+  },
+  "enabledByDefault": true,
+  "configSchema": {
+    "type": "object",
+    "additionalProperties": false,
+    "properties": {}
+  }
+}

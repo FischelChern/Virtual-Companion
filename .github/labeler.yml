@@ -353,6 +353,11 @@
   - changed-files:
       - any-glob-to-any-file:
           - "extensions/memory-wiki/**"
+"extensions: virtual-companion":
+  - changed-files:
+      - any-glob-to-any-file:
+          - "extensions/virtual-companion/**"
+          - "docs/plugins/virtual-companion.md"
 "extensions: oc-path":
   - changed-files:
       - any-glob-to-any-file:
