@@ -7,6 +7,7 @@ import { getRuntimeConfig } from "../../../config/config.js";
 import type { DiagnosticTraceContext } from "../../../infra/diagnostic-trace-context.js";
 import { freezeDiagnosticTraceContext } from "../../../infra/diagnostic-trace-context.js";
 import { resolveHeartbeatSummaryForAgent } from "../../../infra/heartbeat-summary.js";
+import { classifyModelEndpoint } from "../../model-endpoint.js";
 import {
   buildAgentHookContextChannelFields,
   buildAgentHookContextIdentityFields,
@@ -108,6 +109,7 @@ export async function prepareEmbeddedAttemptPromptAssembly(input: {
     workspaceDir: attempt.workspaceDir,
     modelProviderId: attempt.model.provider,
     modelId: attempt.model.id,
+    modelEndpointLocation: classifyModelEndpoint(attempt.model.baseUrl),
     trigger: attempt.trigger,
     ...buildAgentHookContextChannelFields(attempt),
     ...buildAgentHookContextIdentityFields({

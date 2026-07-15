@@ -722,6 +722,7 @@ async function dispatchReplyFromConfigInner(
       groupId,
       replyKind: options?.kind ?? "final",
       runId: params.replyOptions?.runId,
+      trigger: params.replyOptions?.isHeartbeat ? "heartbeat" : "user",
     });
   };
 

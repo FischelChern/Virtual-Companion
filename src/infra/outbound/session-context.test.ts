@@ -100,6 +100,20 @@ describe("buildOutboundSessionContext", () => {
     });
   });
 
+  it("preserves the originating trigger for outbound lifecycle hooks", () => {
+    expect(
+      buildOutboundSessionContext({
+        cfg: {} as never,
+        sessionKey: "agent:main:discord:dm:U123",
+        trigger: " heartbeat ",
+      }),
+    ).toEqual({
+      key: "agent:main:discord:dm:U123",
+      conversationType: "direct",
+      trigger: "heartbeat",
+    });
+  });
+
   it("preserves trimmed non-id sender fields for e164/username/name policy matching", () => {
     expect(
       buildOutboundSessionContext({

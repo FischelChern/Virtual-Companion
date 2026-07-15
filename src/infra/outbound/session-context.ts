@@ -45,6 +45,8 @@ export type OutboundSessionContext = {
   conversationKind?: "direct" | "group" | "channel";
   /** Active agent id used for workspace-scoped media roots. */
   agentId?: string;
+  /** Originating run trigger forwarded to outbound lifecycle hooks. */
+  trigger?: string;
   /** Originating account id used for requester-scoped group policy resolution. */
   requesterAccountId?: string;
   /** Originating sender id used for sender-scoped outbound media policy. */
@@ -65,6 +67,7 @@ export function buildOutboundSessionContext(params: {
   conversationType?: string | null;
   isGroup?: boolean | null;
   agentId?: string | null;
+  trigger?: string | null;
   requesterAccountId?: string | null;
   requesterSenderId?: string | null;
   requesterSenderName?: string | null;
@@ -98,6 +101,7 @@ export function buildOutboundSessionContext(params: {
             ? "direct"
             : undefined;
   const explicitAgentId = normalizeOptionalString(params.agentId);
+  const trigger = normalizeOptionalString(params.trigger);
   const requesterAccountId = normalizeOptionalString(params.requesterAccountId);
   const requesterSenderId = normalizeOptionalString(params.requesterSenderId);
   const requesterSenderName = normalizeOptionalString(params.requesterSenderName);
@@ -115,6 +119,7 @@ export function buildOutboundSessionContext(params: {
     !conversationType &&
     !conversationKind &&
     !agentId &&
+    !trigger &&
     !requesterAccountId &&
     !requesterSenderId &&
     !requesterSenderName &&
@@ -129,6 +134,7 @@ export function buildOutboundSessionContext(params: {
     ...(conversationType ? { conversationType } : {}),
     ...(conversationKind ? { conversationKind } : {}),
     ...(agentId ? { agentId } : {}),
+    ...(trigger ? { trigger } : {}),
     ...(requesterAccountId ? { requesterAccountId } : {}),
     ...(requesterSenderId ? { requesterSenderId } : {}),
     ...(requesterSenderName ? { requesterSenderName } : {}),

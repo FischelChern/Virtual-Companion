@@ -529,6 +529,7 @@ export function createFollowupRunner(params: {
           mirror: hasTranscriptOwner ? false : options.mirror,
           replyKind,
           runId: options.runId,
+          trigger: queued.run.trigger,
         });
         if (!result.ok) {
           const errorMsg = result.error ?? "unknown error";

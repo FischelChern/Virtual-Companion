@@ -10,6 +10,7 @@ import type { ChatType } from "../channels/chat-type.js";
 import type { OpenClawConfig } from "../config/types.openclaw.js";
 import type { TtsAutoMode } from "../config/types.tts.js";
 import type { DiagnosticTraceContext } from "../infra/diagnostic-trace-context.js";
+import type { ModelEndpointLocation } from "../agents/model-endpoint.js";
 import type {
   PluginHookBeforeAgentStartEvent,
   PluginHookBeforeAgentStartResult,
@@ -273,6 +274,8 @@ export type PluginHookAgentContext = {
   workspaceDir?: string;
   modelProviderId?: string;
   modelId?: string;
+  /** Network location derived from the resolved runtime model endpoint. */
+  modelEndpointLocation?: ModelEndpointLocation;
   messageProvider?: string;
   /** Channel/plugin id for channel-originated runs, e.g. `discord`. */
   channel?: string;

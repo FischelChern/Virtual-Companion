@@ -24,6 +24,8 @@ export type PluginHookMessageContext = {
    * it as optional.
    */
   sessionKey?: string;
+  /** Originating run trigger when outbound delivery preserves it. */
+  trigger?: string;
   /**
    * Per-turn run identifier (UUID), unique to one end-to-end agent turn:
    * stable across all LLM-call iterations, retry attempts (compaction,

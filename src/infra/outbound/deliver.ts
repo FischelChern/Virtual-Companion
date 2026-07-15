@@ -1173,6 +1173,7 @@ async function applyMessageSendingHook(params: {
   replyToId?: string | null;
   threadId?: string | number | null;
   sessionKey?: string;
+  trigger?: string;
 }): Promise<{
   cancelled: boolean;
   cancelReason?: string;
@@ -1207,6 +1208,7 @@ async function applyMessageSendingHook(params: {
         accountId: params.accountId ?? undefined,
         conversationId: params.to,
         ...(params.sessionKey ? { sessionKey: params.sessionKey } : {}),
+        ...(params.trigger ? { trigger: params.trigger } : {}),
       },
     );
     if (sendingResult?.cancel) {
@@ -2195,6 +2197,7 @@ async function deliverOutboundPayloadsCore(
         replyToId: resolveCurrentReplyTo(deliveryPayload).replyToId,
         threadId: params.threadId,
         sessionKey: sessionKeyForInternalHooks,
+        trigger: params.session?.trigger,
       });
       if (hookResult.cancelled) {
         const hookEffect =

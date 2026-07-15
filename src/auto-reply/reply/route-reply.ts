@@ -103,6 +103,8 @@ type RouteReplyParams = {
   replyKind: ReplyDispatchKind;
   /** Agent run id for hook context. */
   runId?: string;
+  /** Originating run trigger for outbound lifecycle hooks. */
+  trigger?: string;
 };
 
 type RouteReplyResult = {
@@ -270,6 +272,7 @@ export async function routeReply(params: RouteReplyParams): Promise<RouteReplyRe
       conversationType: params.policyConversationType,
       isGroup:
         params.policySessionKey || params.policyConversationType ? undefined : params.isGroup,
+      trigger: params.trigger,
       requesterSenderId: params.requesterSenderId,
       requesterSenderName: params.requesterSenderName,
       requesterSenderUsername: params.requesterSenderUsername,
