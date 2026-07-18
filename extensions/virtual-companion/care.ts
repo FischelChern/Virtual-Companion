@@ -40,6 +40,16 @@ export function isWithinSleepWindow(params: {
     : params.minutes >= start || params.minutes < end;
 }
 
+/** Uses the saved IANA time zone so dispatch policy matches care planning. */
+export function isProfileSleeping(profile: CompanionProfile, now = new Date()): boolean {
+  const clock = readLocalClock(now, profile.routine.timeZone);
+  return isWithinSleepWindow({
+    sleepStart: profile.routine.sleepStart,
+    sleepEnd: profile.routine.sleepEnd,
+    minutes: clock.minutes,
+  });
+}
+
 export async function claimCareEvent(params: {
   stores: CompanionStores;
   profile: CompanionProfile;
@@ -47,13 +57,7 @@ export async function claimCareEvent(params: {
 }): Promise<CareEvent | undefined> {
   const now = params.now ?? new Date();
   const clock = readLocalClock(now, params.profile.routine.timeZone);
-  if (
-    isWithinSleepWindow({
-      sleepStart: params.profile.routine.sleepStart,
-      sleepEnd: params.profile.routine.sleepEnd,
-      minutes: clock.minutes,
-    })
-  ) {
+  if (isProfileSleeping(params.profile, now)) {
     return undefined;
   }
 

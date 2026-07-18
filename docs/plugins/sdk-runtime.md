@@ -291,6 +291,39 @@ two-party event loops that do not go through the shared inbound reply runner.
     before choosing this path from tools that can also run in standalone agent processes.
 
   </Accordion>
+  <Accordion title="api.runtime.skills">
+    Apply a narrowly constrained skill mutation when a bundled or trusted
+    plugin owns the user-facing consent flow.
+
+    ```typescript
+    const generated = await api.runtime.skills.applyDependencyFreeGeneratedSkill({
+      workspaceDir,
+      name: "commute-checklist",
+      description: "Keep a personal commute checklist",
+      content: "# Commute checklist\n\nUse the saved checklist.",
+      origin: { sessionKey },
+    });
+
+    const installed = await api.runtime.skills.installOfficialClawHubSkill({
+      workspaceDir,
+      slug: "calendar-helper",
+      version: "1.2.3",
+    });
+    ```
+
+    Generated skills are written through Skill Workshop. The host permits one
+    `SKILL.md` only, rejects dependency-install commands, scans the proposal,
+    and applies it only when that scan is clean. Official catalog installation
+    accepts an explicit version only and rejects entries not marked official by
+    the default ClawHub registry. These helpers do not install arbitrary
+    packages, run shell commands, or accept support files.
+
+    <Warning>
+    Do not call either helper merely because a model inferred a workflow. The
+    plugin must first obtain and retain user consent for the specific skill.
+    </Warning>
+
+  </Accordion>
   <Accordion title="api.runtime.subagent">
     Launch and manage background subagent runs.
 

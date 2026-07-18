@@ -1,8 +1,10 @@
 import { describe, expect, it } from "vitest";
 import {
+  archiveKey,
   archiveMessage,
   chunkText,
   forgetSessionArchive,
+  readArchivedAttachmentContent,
   searchArchive,
 } from "./state.js";
 import { createCompanionStoresForTests } from "./test-helpers.js";
@@ -53,5 +55,33 @@ describe("virtual companion archive", () => {
         query: "commute",
       }),
     ).resolves.toEqual([]);
+  });
+
+  it("preserves inline attachment bytes and deletes them only with the chat archive", async () => {
+    const stores = createCompanionStoresForTests();
+    const sessionKey = "agent:main:dm:alice";
+    await archiveMessage({
+      stores,
+      sessionKey,
+      runId: "run-attachment",
+      index: 0,
+      role: "user",
+      text: "This is the photo from my walk.",
+      attachments: [{ type: "image_url", mimeType: "image/png", content: "aGVsbG8=" }],
+    });
+
+    const messageKey = archiveKey({
+      sessionKey,
+      runId: "run-attachment",
+      index: 0,
+      role: "user",
+      text: "This is the photo from my walk.",
+    });
+    const attachment = await stores.attachments.lookup(`${messageKey}:attachment:0000`);
+    expect(attachment).toEqual(expect.objectContaining({ mimeType: "image/png", chunkCount: 1 }));
+    await expect(readArchivedAttachmentContent(stores, attachment!)).resolves.toBe("aGVsbG8=");
+
+    await forgetSessionArchive(stores, sessionKey);
+    await expect(stores.attachments.lookup(`${messageKey}:attachment:0000`)).resolves.toBeUndefined();
   });
 });

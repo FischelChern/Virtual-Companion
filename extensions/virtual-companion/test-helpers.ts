@@ -1,4 +1,8 @@
-import type { PluginStateEntry, PluginStateKeyedStore } from "openclaw/plugin-sdk/plugin-state-runtime";
+import type {
+  OpenKeyedStoreOptions,
+  PluginStateEntry,
+  PluginStateKeyedStore,
+} from "openclaw/plugin-sdk/plugin-state-runtime";
 import { createCompanionStores, type CompanionStores } from "./state.js";
 
 class MemoryStore<T> implements PluginStateKeyedStore<T> {
@@ -39,6 +43,21 @@ class MemoryStore<T> implements PluginStateKeyedStore<T> {
   }
 }
 
+export function createCompanionStoreOpenerForTests(): <T>(
+  options: OpenKeyedStoreOptions,
+) => PluginStateKeyedStore<T> {
+  const stores = new Map<string, PluginStateKeyedStore<unknown>>();
+  return <T>(options: OpenKeyedStoreOptions) => {
+    const existing = stores.get(options.namespace) as PluginStateKeyedStore<T> | undefined;
+    if (existing) {
+      return existing;
+    }
+    const created = new MemoryStore<T>();
+    stores.set(options.namespace, created as PluginStateKeyedStore<unknown>);
+    return created;
+  };
+}
+
 export function createCompanionStoresForTests(): CompanionStores {
-  return createCompanionStores(<T>() => new MemoryStore<T>());
+  return createCompanionStores(createCompanionStoreOpenerForTests());
 }

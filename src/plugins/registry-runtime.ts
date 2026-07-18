@@ -460,34 +460,32 @@ export function createPluginRuntimeResolver(state: PluginRegistryState) {
             return addPluginRuntimeResolutionContext({ error, pluginId, prop });
           }
         };
+        const assertTrustedPluginRuntimeCapability = (capability: string): void => {
+          const record =
+            pluginRuntimeRecordById.get(pluginId) ??
+            registry.plugins.find((entry) => entry.id === pluginId);
+          if (record?.origin !== "bundled" && record?.trustedOfficialInstall !== true) {
+            throw new Error(`${capability} is only available for trusted plugins in this release.`);
+          }
+        };
         if (prop === "state") {
           const baseState = getRuntimeProperty();
-          const assertPluginStateAllowed = () => {
-            const record =
-              pluginRuntimeRecordById.get(pluginId) ??
-              registry.plugins.find((entry) => entry.id === pluginId);
-            if (record?.origin !== "bundled" && record?.trustedOfficialInstall !== true) {
-              throw new Error(
-                "openKeyedStore is only available for trusted plugins in this release.",
-              );
-            }
-          };
           return {
             ...baseState,
             openKeyedStore: <T>(options: OpenKeyedStoreOptions): PluginStateKeyedStore<T> => {
-              assertPluginStateAllowed();
+              assertTrustedPluginRuntimeCapability("openKeyedStore");
               return createPluginStateKeyedStore<T>(pluginId, options);
             },
             openSyncKeyedStore: <T>(
               options: OpenKeyedStoreOptions,
             ): PluginStateSyncKeyedStore<T> => {
-              assertPluginStateAllowed();
+              assertTrustedPluginRuntimeCapability("openSyncKeyedStore");
               return createPluginStateSyncKeyedStore<T>(pluginId, options);
             },
             openChannelIngressQueue: <TPayload, TMetadata = unknown, TCompletedMetadata = unknown>(
               options?: Omit<Parameters<typeof createChannelIngressQueue>[0], "channelId">,
             ) => {
-              assertPluginStateAllowed();
+              assertTrustedPluginRuntimeCapability("openChannelIngressQueue");
               const stateDir = options?.stateDir ?? baseState.resolveStateDir();
               return createChannelIngressQueue<TPayload, TMetadata, TCompletedMetadata>({
                 ...options,
@@ -496,6 +494,21 @@ export function createPluginRuntimeResolver(state: PluginRegistryState) {
               });
             },
           } satisfies PluginRuntime["state"];
+        }
+        if (prop === "skills") {
+          const skills: PluginRuntime["skills"] = getRuntimeProperty();
+          return {
+            applyDependencyFreeGeneratedSkill: async (params) =>
+              await runWithPluginScope(async () => {
+                assertTrustedPluginRuntimeCapability("runtime.skills");
+                return await skills.applyDependencyFreeGeneratedSkill(params);
+              }),
+            installOfficialClawHubSkill: async (params) =>
+              await runWithPluginScope(async () => {
+                assertTrustedPluginRuntimeCapability("runtime.skills");
+                return await skills.installOfficialClawHubSkill(params);
+              }),
+          } satisfies PluginRuntime["skills"];
         }
         if (prop === "config") {
           const config: PluginRuntime["config"] = getRuntimeProperty();

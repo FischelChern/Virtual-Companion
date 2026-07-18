@@ -17,7 +17,8 @@ not run a model locally or change any installed model provider.
 
 - Configure and authenticate a cloud model provider for the Gateway. The
   companion uses the normal active model selection and does not deploy a local
-  model.
+  model. Once bound, a companion session rejects local and unknown model
+  endpoints until an external endpoint is configured.
 - Start the companion in the one direct chat that should own its Soul and
   memory. A second session cannot bind another companion profile.
 
@@ -62,20 +63,22 @@ plugin does not apply a retention TTL or temporal decay. Prompt recall returns
 only a small, relevant subset, so a large archive is never injected wholesale.
 
 The archive deliberately excludes system prompts, tool arguments, tool results,
-and credentials. Attachment block types are recorded with the message; the
-channel remains the source of the original binary attachment.
+and credentials. Inline `data:*;base64,...` attachment content is stored in the
+Gateway SQLite archive with its message. Remote attachment URLs are stored only
+as references; the plugin does not download private channel media on its own.
 
 Say `forget our companion memory` to explicitly clear the bound chat archive.
 This is irreversible and does not remove the Soul profile itself.
 
 ## Skill Evolution
 
-When recurring procedures emerge, the companion can use the existing Skill
-Workshop tool to draft and apply a dependency-free workspace skill. The
-companion records skill-evolution outcomes in its audit history. Official skill
-installation remains limited to verified official catalog sources and their
-normal install checks; the companion must not install arbitrary third-party
-packages or scripts.
+After you explicitly agree to a recurring procedure, the companion can apply a
+dependency-free workspace skill through Skill Workshop. The host scans that
+single-file skill before applying it and rejects dependency-install commands or
+support files. The companion records applied and blocked outcomes in its audit
+history. Official skill installation requires the exact version you request and
+an official mark from the default ClawHub registry; it cannot install arbitrary
+third-party packages or scripts.
 
 ## Troubleshooting
 

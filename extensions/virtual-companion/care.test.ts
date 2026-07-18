@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { claimCareEvent, isWithinSleepWindow } from "./care.js";
+import { claimCareEvent, isProfileSleeping, isWithinSleepWindow } from "./care.js";
 import type { CompanionProfile } from "./state.js";
 import { createCompanionStoresForTests } from "./test-helpers.js";
 
@@ -40,6 +40,11 @@ describe("virtual companion care", () => {
         now: new Date("2026-07-16T01:00:00.000Z"),
       }),
     ).resolves.toBeUndefined();
+  });
+
+  it("uses the same sleep check for outbound care policy", () => {
+    expect(isProfileSleeping(profile, new Date("2026-07-16T01:00:00.000Z"))).toBe(true);
+    expect(isProfileSleeping(profile, new Date("2026-07-16T12:00:00.000Z"))).toBe(false);
   });
 
   it("claims at most one care event for the same local window", async () => {

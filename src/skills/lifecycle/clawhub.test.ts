@@ -324,6 +324,68 @@ describe("skills-clawhub", () => {
     });
   });
 
+  it("rejects a nonofficial latest resolution before downloading it when official is required", async () => {
+    const result = await installSkillFromClawHub({
+      workspaceDir: "/tmp/workspace",
+      slug: "agentreceipt",
+      requireOfficial: true,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'Skill "agentreceipt" is not an official ClawHub skill.',
+      version: "1.0.0",
+    });
+    expect(downloadClawHubSkillArchiveUrlMock).not.toHaveBeenCalled();
+  });
+
+  it("rejects a nonofficial pinned release before downloading it when official is required", async () => {
+    const result = await installSkillFromClawHub({
+      workspaceDir: "/tmp/workspace",
+      slug: "agentreceipt",
+      version: "1.0.0",
+      requireOfficial: true,
+    });
+
+    expect(result).toEqual({
+      ok: false,
+      error: 'Skill "agentreceipt" is not an official ClawHub skill.',
+      version: "1.0.0",
+    });
+    expect(downloadClawHubSkillArchiveMock).not.toHaveBeenCalled();
+  });
+
+  it("installs an official pinned release when official is required", async () => {
+    fetchClawHubSkillDetailMock.mockResolvedValueOnce({
+      skill: {
+        slug: "agentreceipt",
+        displayName: "AgentReceipt",
+        createdAt: 1,
+        updatedAt: 2,
+        official: true,
+      },
+      latestVersion: {
+        version: "1.0.0",
+        createdAt: 3,
+      },
+    });
+    fetchClawHubSkillSecurityVerdictsMock.mockRejectedValueOnce(new Error("should not be called"));
+
+    const result = await installSkillFromClawHub({
+      workspaceDir: "/tmp/workspace",
+      slug: "agentreceipt",
+      version: "1.0.0",
+      requireOfficial: true,
+    });
+
+    expectInstalledSkill(result, {
+      slug: "agentreceipt",
+      version: "1.0.0",
+      targetDir: "/tmp/workspace/skills/agentreceipt",
+    });
+    expect(fetchClawHubSkillSecurityVerdictsMock).not.toHaveBeenCalled();
+  });
+
   it("bypasses ClawHub trust checks for official skill install resolutions", async () => {
     fetchClawHubSkillInstallResolutionMock.mockResolvedValueOnce({
       ok: true,

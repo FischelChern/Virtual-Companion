@@ -173,6 +173,38 @@ export type PluginRuntimeThinkingPolicy = {
   defaultLevel?: import("../../auto-reply/thinking.js").ThinkLevel | null;
 };
 
+/** Attribution retained with a host-applied skill mutation. */
+export type PluginRuntimeSkillOrigin = {
+  agentId?: string;
+  sessionKey?: string;
+  runId?: string;
+  messageId?: string;
+};
+
+/** Narrow, host-validated skill mutations available to trusted plugins. */
+export type PluginRuntimeSkills = {
+  /**
+   * Writes one dependency-free generated SKILL.md through Skill Workshop after
+   * the proposal scanner passes. Support files and install commands are not
+   * accepted by this capability.
+   */
+  applyDependencyFreeGeneratedSkill: (params: {
+    workspaceDir: string;
+    name: string;
+    description: string;
+    content: string;
+    goal?: string;
+    evidence?: string;
+    origin?: PluginRuntimeSkillOrigin;
+  }) => Promise<{ proposalId: string; targetSkillFile: string }>;
+  /** Installs an exact version only when the default ClawHub marks it official. */
+  installOfficialClawHubSkill: (params: {
+    workspaceDir: string;
+    slug: string;
+    version: string;
+  }) => Promise<{ slug: string; version: string; targetDir: string }>;
+};
+
 /** Structured logger surface injected into runtime-backed plugin helpers. */
 export type RuntimeLogger = {
   debug?: (message: string, meta?: Record<string, unknown>) => void;
@@ -427,6 +459,7 @@ export type PluginRuntimeCore = {
       TCompletedMetadata
     >;
   };
+  skills: PluginRuntimeSkills;
   tasks: {
     runs: PluginRuntimeTaskRuns;
     flows: PluginRuntimeTaskFlows;

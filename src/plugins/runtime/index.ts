@@ -31,6 +31,7 @@ import { createRuntimeConfig } from "./runtime-config.js";
 import { createRuntimeEvents } from "./runtime-events.js";
 import { createRuntimeLogging } from "./runtime-logging.js";
 import { createRuntimeMedia } from "./runtime-media.js";
+import { createRuntimeSkills } from "./runtime-skills.js";
 import { createRuntimeSystem } from "./runtime-system.js";
 import { createRuntimeTaskFlow } from "./runtime-taskflow.js";
 import { createRuntimeTasks } from "./runtime-tasks.js";
@@ -345,6 +346,7 @@ export function createPluginRuntime(_options: CreatePluginRuntimeOptions = {}): 
         );
       },
     },
+    skills: createRuntimeSkills(),
     tasks,
     taskFlow,
   } satisfies Omit<

@@ -178,6 +178,64 @@ describe("plugin registry runtime config scope", () => {
     expect(acquireScope).toMatchObject({ pluginId: "memory-provider" });
   });
 
+  it("limits skill mutation helpers to trusted plugins and preserves their scope", async () => {
+    let applyScope = getPluginRuntimeGatewayRequestScope();
+    const applyDependencyFreeGeneratedSkill = vi.fn(async () => {
+      applyScope = getPluginRuntimeGatewayRequestScope();
+      return { proposalId: "proposal-1", targetSkillFile: "/workspace/skills/demo/SKILL.md" };
+    });
+    const runtime = createPluginRuntime();
+    runtime.skills = {
+      applyDependencyFreeGeneratedSkill,
+      installOfficialClawHubSkill: async () => ({
+        slug: "demo",
+        version: "1.0.0",
+        targetDir: "/workspace/skills/demo",
+      }),
+    };
+    const pluginRegistry = createTestRegistry(runtime);
+    const config = {} as OpenClawConfig;
+    const untrusted = pluginRegistry.createApi(
+      createPluginRecord({
+        id: "untrusted-skill-writer",
+        source: "/plugins/untrusted-skill-writer/index.js",
+        origin: "global",
+        enabled: true,
+        configSchema: false,
+      }),
+      { config },
+    );
+
+    await expect(
+      untrusted.runtime.skills.applyDependencyFreeGeneratedSkill({
+        workspaceDir: "/workspace",
+        name: "demo",
+        description: "Demo",
+        content: "# Demo",
+      }),
+    ).rejects.toThrow("runtime.skills is only available for trusted plugins");
+    expect(applyDependencyFreeGeneratedSkill).not.toHaveBeenCalled();
+
+    const trusted = pluginRegistry.createApi(
+      createPluginRecord({
+        id: "bundled-skill-writer",
+        source: "/plugins/bundled-skill-writer/index.js",
+        origin: "bundled",
+        enabled: true,
+        configSchema: false,
+      }),
+      { config },
+    );
+    await trusted.runtime.skills.applyDependencyFreeGeneratedSkill({
+      workspaceDir: "/workspace",
+      name: "demo",
+      description: "Demo",
+      content: "# Demo",
+    });
+
+    expect(applyScope).toMatchObject({ pluginId: "bundled-skill-writer" });
+  });
+
   it("runs node helpers with the owning plugin scope", async () => {
     let listScope = getPluginRuntimeGatewayRequestScope();
     let invokeScope = getPluginRuntimeGatewayRequestScope();

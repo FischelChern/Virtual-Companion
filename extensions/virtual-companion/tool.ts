@@ -2,7 +2,7 @@
 import fs from "node:fs/promises";
 import path from "node:path";
 import { Type } from "typebox";
-import type { AnyAgentTool } from "openclaw/plugin-sdk/plugin-entry";
+import type { AnyAgentTool, OpenClawPluginApi } from "openclaw/plugin-sdk/plugin-entry";
 import type { CompanionStores } from "./state.js";
 import {
   evolutionKey,
@@ -18,7 +18,7 @@ const CompanionToolSchema = Type.Object(
   {
     action: Type.String({
       description:
-        "One of: setup, update_soul, set_mood, set_routine, status, search_memory, forget_memory, record_evolution.",
+        "One of: setup, update_soul, set_mood, set_routine, status, search_memory, forget_memory, apply_generated_skill, install_official_skill, record_evolution.",
     }),
     name: Type.Optional(Type.String()),
     relationship: Type.Optional(Type.String()),
@@ -35,6 +35,10 @@ const CompanionToolSchema = Type.Object(
     work_end: Type.Optional(Type.String({ description: "24-hour HH:MM." })),
     query: Type.Optional(Type.String()),
     summary: Type.Optional(Type.String()),
+    skill_name: Type.Optional(Type.String()),
+    skill_description: Type.Optional(Type.String()),
+    skill_content: Type.Optional(Type.String()),
+    skill_version: Type.Optional(Type.String()),
     kind: Type.Optional(Type.String({ description: "generated-skill or official-skill." })),
     status: Type.Optional(Type.String({ description: "recorded, applied, or blocked." })),
   },
@@ -44,6 +48,11 @@ const CompanionToolSchema = Type.Object(
 type ToolContext = {
   sessionKey?: string;
   workspaceDir?: string;
+  isPrivateSession: (sessionKey: string) => boolean;
+  skills: Pick<
+    OpenClawPluginApi["runtime"]["skills"],
+    "applyDependencyFreeGeneratedSkill" | "installOfficialClawHubSkill"
+  >;
 };
 
 export function createCompanionTool(params: {
@@ -71,6 +80,9 @@ export function createCompanionTool(params: {
       }
 
       if (action === "setup") {
+        if (!params.context.isPrivateSession(sessionKey)) {
+          throw new Error("Virtual Companion setup is available only in a direct private chat.");
+        }
         const profile = createProfile(sessionKey, args, existing);
         await params.stores.profile.register(profileKey(), profile);
         await ensureHeartbeatTask(params.context.workspaceDir);
@@ -110,17 +122,60 @@ export function createCompanionTool(params: {
         const deleted = await forgetSessionArchive(params.stores, sessionKey);
         return textResult(`Forgot ${deleted} archived conversation entries from this companion chat.`);
       }
+      if (action === "apply_generated_skill") {
+        const name = readString(args, "skill_name");
+        try {
+          const result = await params.context.skills.applyDependencyFreeGeneratedSkill({
+            workspaceDir: requireWorkspaceDir(params.context.workspaceDir),
+            name,
+            description: readString(args, "skill_description"),
+            content: readString(args, "skill_content"),
+            ...(readOptionalString(args, "summary") ? { goal: readOptionalString(args, "summary") } : {}),
+            origin: { sessionKey },
+          });
+          await recordEvolution(params.stores, {
+            kind: "generated-skill",
+            summary: `Applied generated skill ${name}.`,
+            status: "applied",
+          });
+          return textResult(`Applied the dependency-free skill ${name}.`, result);
+        } catch (error) {
+          await recordEvolution(params.stores, {
+            kind: "generated-skill",
+            summary: `Blocked generated skill ${name}.`,
+            status: "blocked",
+          });
+          throw error;
+        }
+      }
+      if (action === "install_official_skill") {
+        const name = readString(args, "skill_name");
+        try {
+          const result = await params.context.skills.installOfficialClawHubSkill({
+            workspaceDir: requireWorkspaceDir(params.context.workspaceDir),
+            slug: name,
+            version: readString(args, "skill_version"),
+          });
+          await recordEvolution(params.stores, {
+            kind: "official-skill",
+            summary: `Installed official skill ${name}@${result.version}.`,
+            status: "applied",
+          });
+          return textResult(`Installed the official skill ${name}@${result.version}.`, result);
+        } catch (error) {
+          await recordEvolution(params.stores, {
+            kind: "official-skill",
+            summary: `Blocked official skill ${name}.`,
+            status: "blocked",
+          });
+          throw error;
+        }
+      }
       if (action === "record_evolution") {
         const summary = readString(args, "summary");
         const kind = readString(args, "kind") === "official-skill" ? "official-skill" : "generated-skill";
         const status = normalizeEvolutionStatus(readString(args, "status"));
-        const createdAt = Date.now();
-        await params.stores.evolution.register(evolutionKey(createdAt, summary), {
-          createdAt,
-          kind,
-          summary,
-          status,
-        });
+        await recordEvolution(params.stores, { kind, summary, status });
         return textResult("Recorded the companion skill-evolution event.");
       }
       throw new Error(`Unknown Virtual Companion action: ${action}`);
@@ -264,6 +319,21 @@ function readOptionalNumber(value: Record<string, unknown>, key: string): number
 
 function normalizeEvolutionStatus(value: string): "recorded" | "applied" | "blocked" {
   return value === "applied" || value === "blocked" ? value : "recorded";
+}
+
+function requireWorkspaceDir(workspaceDir: string | undefined): string {
+  if (!workspaceDir) {
+    throw new Error("Virtual Companion skill evolution needs an active workspace.");
+  }
+  return workspaceDir;
+}
+
+async function recordEvolution(
+  stores: CompanionStores,
+  value: { kind: "generated-skill" | "official-skill"; summary: string; status: "recorded" | "applied" | "blocked" },
+): Promise<void> {
+  const createdAt = Date.now();
+  await stores.evolution.register(evolutionKey(createdAt, value.summary), { createdAt, ...value });
 }
 
 function clamp(value: number, minimum: number, maximum: number): number {

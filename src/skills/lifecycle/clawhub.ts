@@ -238,6 +238,8 @@ type ClawHubInstallParams = {
   baseUrl?: string;
   force?: boolean;
   forceInstall?: boolean;
+  /** Reject any source not explicitly marked official by the default ClawHub. */
+  requireOfficial?: boolean;
   acknowledgeClawHubRisk?: boolean;
   onClawHubRisk?: (request: ClawHubRiskAcknowledgementRequest) => boolean | Promise<boolean>;
   logger?: Logger;
@@ -1341,6 +1343,13 @@ async function performClawHubSkillInstall(
         baseUrl: params.baseUrl,
         detail,
       });
+      if (params.requireOfficial && !officialClawHubSkill) {
+        return {
+          ok: false,
+          error: `Skill "${params.slug}" is not an official ClawHub skill.`,
+          version,
+        };
+      }
       const trust = await ensureClawHubSkillTrustAcknowledged({
         ...params,
         version,
@@ -1384,6 +1393,13 @@ async function performClawHubSkillInstall(
           detail,
           resolution: latestResolution,
         });
+        if (params.requireOfficial && !officialClawHubSkill) {
+          return {
+            ok: false,
+            error: `Skill "${params.slug}" is not an official ClawHub skill.`,
+            version,
+          };
+        }
         // GitHub-backed ClawHub skills are commit resolutions, not ClawHub skill
         // release versions; the install resolver owns their scan/force policy.
         params.logger?.info?.(`Downloading ${params.slug}@${version} from GitHub…`);
@@ -1398,6 +1414,13 @@ async function performClawHubSkillInstall(
           detail,
           resolution: latestResolution,
         });
+        if (params.requireOfficial && !officialClawHubSkill) {
+          return {
+            ok: false,
+            error: `Skill "${params.slug}" is not an official ClawHub skill.`,
+            version,
+          };
+        }
         const trust = await ensureClawHubSkillTrustAcknowledged({
           ...params,
           version,
@@ -1598,6 +1621,7 @@ export async function installSkillFromClawHub(params: {
   baseUrl?: string;
   force?: boolean;
   forceInstall?: boolean;
+  requireOfficial?: boolean;
   acknowledgeClawHubRisk?: boolean;
   onClawHubRisk?: (request: ClawHubRiskAcknowledgementRequest) => boolean | Promise<boolean>;
   logger?: Logger;

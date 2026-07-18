@@ -393,6 +393,15 @@ describe("plugin runtime command execution", () => {
       },
     },
     {
+      name: "exposes restricted Skill Workshop and official ClawHub helpers",
+      assert: (runtime: ReturnType<typeof createPluginRuntime>) => {
+        expectFunctionKeys(runtime.skills as Record<string, unknown>, [
+          "applyDependencyFreeGeneratedSkill",
+          "installOfficialClawHubSkill",
+        ]);
+      },
+    },
+    {
       name: "exposes runtime.sandbox workspace-authority resolution",
       assert: (runtime: ReturnType<typeof createPluginRuntime>) => {
         expectFunctionKeys(runtime.sandbox as Record<string, unknown>, [
